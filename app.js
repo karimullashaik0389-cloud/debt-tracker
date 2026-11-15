@@ -123,12 +123,12 @@
     }).join('');
     $$('.user-pick').forEach(function (b) { b.onclick = function () { pickUser(b.getAttribute('data-user')); }; });
   }
-  function pickUser(u) { pinUser = u; pin = ''; $('#lock-users').hidden = true; $('#lock-pin').hidden = false; $('#pin-ask').textContent = 'Hi ' + u + ', enter your PIN'; $('#lock-msg').textContent = ''; dots(); }
-  function dots() { var h = ''; for (var i = 0; i < Math.max(6, pin.length); i++) h += '<i class="' + (i < pin.length ? 'on' : '') + '"></i>'; $('#pin-dots').innerHTML = h; }
+  function pickUser(u) { pinUser = u; pin = ''; $('#lock-users').hidden = true; $('#lock-pin').hidden = false; $('#pin-ask').textContent = 'Hi ' + u + ', enter your PIN (4 to 6 digits), then tap OK'; $('#lock-msg').textContent = ''; dots(); }
+  function dots() { var h = ''; for (var i = 0; i < Math.max(4, pin.length); i++) h += '<i class="' + (i < pin.length ? 'on' : '') + '"></i>'; $('#pin-dots').innerHTML = h; }
   function key(k) {
     if (k === 'del') { pin = pin.slice(0, -1); dots(); return; }
     if (k === 'ok') { if (pin.length >= 4) unlock(); return; }
-    if (pin.length >= 8) return;
+    if (pin.length >= 6) return;
     pin += k; dots();
   }
   function unlock() {
@@ -653,7 +653,7 @@
             (p.role === 'owner' ? '' : '<button type="button" class="btn btn-ghost danger-text" data-revoke="' + esc(p.name) + '">Remove</button>') + '</div>';
         }).join('') + '</div>' +
         field('Add a person', '<input class="input" id="s-newname" maxlength="30" placeholder="Name">') +
-        field('Their first PIN (4–8 digits)', '<input class="input" id="s-newpin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8">') +
+        field('Their first PIN (4 to 6 digits)', '<input class="input" id="s-newpin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]*">') +
         '<p class="note">Tell them the PIN in person. They must choose their own PIN the first time they open the app.</p>' +
         '<p class="err" id="f-err2"></p><button type="button" class="btn btn-ice" id="s-add">Give access</button>';
     } else h += '<p class="note">Only the owner can change the limits, splits and who has access.</p>';
@@ -672,7 +672,7 @@
     };
     $('#s-add').onclick = function () {
       var n = $('#s-newname').value.trim(), p = $('#s-newpin').value.trim(), e2 = $('#f-err2');
-      if (!n) { e2.textContent = 'Type a name'; return; } if (!/^\d{4,8}$/.test(p)) { e2.textContent = 'First PIN must be 4–8 digits'; return; }
+      if (!n) { e2.textContent = 'Type a name'; return; } if (!/^\d{4,6}$/.test(p)) { e2.textContent = 'First PIN must be 4 to 6 digits'; return; }
       busy(true); API.addUser(n, p).then(function (r) { busy(false); D.people = r.people; toast(n + ' can now open the app'); settingsSheet(); }).catch(function (e) { busy(false); e2.textContent = e.message; });
     };
     $$('[data-revoke]').forEach(function (b) { b.onclick = function () {
@@ -683,15 +683,15 @@
     }; });
   }
   function changePinSheet(first) {
-    openSheet(first ? 'Choose your own PIN' : 'Change PIN', '<div class="form">' + (first ? '<p class="note">This is your first time in. Choose a PIN only you know (4–8 digits).</p>' :
-      field('Current PIN', '<input class="input" id="p-old" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8">')) +
-      field('New PIN', '<input class="input" id="p-new" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8">') +
-      field('New PIN again', '<input class="input" id="p-new2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8">') +
+    openSheet(first ? 'Choose your own PIN' : 'Change PIN', '<div class="form">' + (first ? '<p class="note">This is your first time in. Choose a PIN only you know (4 to 6 digits).</p>' :
+      field('Current PIN', '<input class="input" id="p-old" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" pattern="[0-9]*">')) +
+      field('New PIN', '<input class="input" id="p-new" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]*">') +
+      field('New PIN again', '<input class="input" id="p-new2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]*">') +
       '<p class="err" id="f-err"></p><button type="button" class="btn btn-primary" id="p-save">Save PIN</button>' +
       (first ? '<button type="button" class="btn btn-ghost" id="p-cancel">Cancel and sign out</button>' : '') + '</div>', { locked: first });
     $('#p-save').onclick = function () {
       var o = first ? lastPin : $('#p-old').value, n = $('#p-new').value, n2 = $('#p-new2').value;
-      if (!/^\d{4,8}$/.test(n)) return err('PIN must be 4–8 digits'); if (n !== n2) return err("The two new PINs don't match");
+      if (!/^\d{4,6}$/.test(n)) return err('PIN must be 4 to 6 digits'); if (n !== n2) return err("The two new PINs don't match");
       busy(true); API.changePin(o, n).then(function () { busy(false); lastPin = ''; closeSheet(); toast('PIN changed'); view = 'home'; load(); }).catch(function (e) { busy(false); err(e.message); });
     };
     if (first) $('#p-cancel').onclick = function () { API.logout(); showLock(); };
